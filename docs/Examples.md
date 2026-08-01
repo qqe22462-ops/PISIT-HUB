@@ -1,1 +1,9 @@
+Window
 
+↓
+
+Tab
+
+↓
+
+Button
