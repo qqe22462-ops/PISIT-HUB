@@ -1,11 +1,21 @@
 # Getting Started
 
-This page teaches you how to create your first UI.
+Welcome to PISIT HUB.
 
-1. Create Window
+This guide will help you create your first interface.
 
-2. Create Tab
+## Step 1
 
-3. Create Section
+Load the PISIT HUB Library.
 
-4. Create Button
+## Step 2
+
+Create a Window.
+
+## Step 3
+
+Create a Tab.
+
+## Step 4
+
+Add your first Button.
