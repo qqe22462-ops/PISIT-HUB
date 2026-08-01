@@ -1,5 +1,13 @@
 # Window
 
-Window is the main interface.
+A Window is the main container of the PISIT HUB interface.
 
-Every UI starts with a Window.
+Every project starts by creating a Window.
+
+## Features
+
+- Title
+- Icon
+- Theme
+- Size
+- Tabsts
