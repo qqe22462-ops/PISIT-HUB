@@ -1,0 +1,19 @@
+local MarketplaceService = game:GetService("MarketplaceService")
+local success, placeInfo = pcall(function()
+    return MarketplaceService:GetProductInfo(game.PlaceId)
+end)
+local mapName = success and placeInfo.Name or ""
+local lowerMapName = string.lower(mapName)
+
+if string.find(lowerMapName, "strongest") or game.PlaceId == 10449761463 or game.PlaceId == 2534724415 then
+    task.spawn(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/qqe22462-ops/PISIT-X-TATA/refs/heads/main/TSB.PISIT"))()
+    end)
+elseif string.find(lowerMapName, "murder mystery 2") or string.find(lowerMapName, "mm2") or game.PlaceId == 142823291 then
+    task.spawn(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/qqe22462-ops/PISIT-HUB/refs/heads/main/MM2_PISIT_HUB.VIP"))()
+    end)
+else
+    warn("[PISIT HUB] แมพนี้ไม่รองรับระบบออโต้สคริปต์!")
+end
+
