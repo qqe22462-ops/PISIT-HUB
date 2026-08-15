@@ -1,0 +1,376 @@
+-- ====================================================================
+-- PISIT HUB x pisit | MM2 VIP (SAFE & FIXED VERSION)
+-- ====================================================================
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ลบ UI เก่าทิ้งเพื่อป้องกันบั๊กซ้อนทับ
+pcall(function()
+    if CoreGui:FindFirstChild("PisitSecurityScanner") then CoreGui.PisitSecurityScanner:Destroy() end
+    if PlayerGui:FindFirstChild("SiaBeamExecutor_UI") then PlayerGui.SiaBeamExecutor_UI:Destroy() end
+    if CoreGui:FindFirstChild("SiaBeamExecutor_UI") then CoreGui.SiaBeamExecutor_UI:Destroy() end
+end)
+
+----------------------------------------------------------------
+-- 1. Main ScreenGui & Base UI Structure (ธีมแดง-ดำ PISIT HUB x pisit)
+----------------------------------------------------------------
+local DeltaExecutor = Instance.new("ScreenGui")
+DeltaExecutor.Name = "SiaBeamExecutor_UI"
+DeltaExecutor.Parent = (pcall(function() return gethui() end) and gethui() or PlayerGui)
+DeltaExecutor.ResetOnSpawn = false
+DeltaExecutor.DisplayOrder = 999999
+DeltaExecutor.IgnoreGuiInset = true
+
+-- ปุ่มลอยเปิด/ปิด UI หลัก (แดง-ดำ)
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "ToggleBtn"
+ToggleBtn.Size = UDim2.new(0, 48, 0, 48)
+ToggleBtn.Position = UDim2.new(0, 15, 0.5, -24)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+ToggleBtn.Text = "PISIT"
+ToggleBtn.TextColor3 = Color3.fromRGB(220, 20, 60)
+ToggleBtn.TextSize = 11
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Active = true
+ToggleBtn.Draggable = true
+ToggleBtn.Parent = DeltaExecutor
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 10)
+
+local ToggleStroke = Instance.new("UIStroke", ToggleBtn)
+ToggleStroke.Color = Color3.fromRGB(220, 20, 60)
+ToggleStroke.Thickness = 1.5
+
+-- หน้าต่างหลัก (แดง-ดำ)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 520, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -160)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = true
+MainFrame.Parent = DeltaExecutor
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(200, 20, 50)
+MainStroke.Thickness = 1.8
+
+-- Header
+local Header = Instance.new("Frame", MainFrame)
+Header.Name = "Header"
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
+
+local Title = Instance.new("TextLabel", Header)
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🔥 PISIT HUB x pisit | MM2 VIP"
+Title.TextColor3 = Color3.fromRGB(230, 30, 60)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 15
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseBtn = Instance.new("TextButton", Header)
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.Position = UDim2.new(1, -34, 0.5, -14)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 20, 40)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+
+ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
+CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
+
+-- Scrolling Control Container
+local ControlScroll = Instance.new("ScrollingFrame", MainFrame)
+ControlScroll.Size = UDim2.new(1, -24, 1, -60)
+ControlScroll.Position = UDim2.new(0, 12, 0, 48)
+ControlScroll.BackgroundTransparency = 1
+ControlScroll.BorderSizePixel = 0
+ControlScroll.ScrollBarThickness = 4
+ControlScroll.ScrollBarImageColor3 = Color3.fromRGB(220, 20, 60)
+
+local UIList = Instance.new("UIListLayout", ControlScroll)
+UIList.Padding = UDim.new(0, 8)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ControlScroll.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
+end)
+
+----------------------------------------------------------------
+-- 2. State Control Variables
+----------------------------------------------------------------
+local RoleESP_Enabled = false
+local AutoGrabGun_Enabled = false
+local Invis_Enabled = false
+
+local RoleGuis = {}
+local RoleHighlights = {}
+local IsTeleportingGun = false
+local isInvisible = false
+local invisLoop = nil
+
+----------------------------------------------------------------
+-- 3. Utility Functions
+----------------------------------------------------------------
+local function CleanPlayerESP(plr)
+    if RoleGuis[plr] then
+        RoleGuis[plr]:Destroy()
+        RoleGuis[plr] = nil
+    end
+    if RoleHighlights[plr] then
+        RoleHighlights[plr]:Destroy()
+        RoleHighlights[plr] = nil
+    end
+end
+
+local function GetPlayerRole(plr)
+    if not plr or not plr.Character then return "คนดี" end
+    if (plr:FindFirstChild("Backpack") and plr.Backpack:FindFirstChild("Knife")) or plr.Character:FindFirstChild("Knife") then
+        return "ไอชั่ว"
+    elseif (plr:FindFirstChild("Backpack") and plr.Backpack:FindFirstChild("Gun")) or plr.Character:FindFirstChild("Gun") then
+        return "นายอำเภอ"
+    end
+    return "คนดี"
+end
+
+local function CreateToggleUI(text, callback)
+    local frame = Instance.new("Frame", ControlScroll)
+    frame.Size = UDim2.new(1, 0, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+    
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Color = Color3.fromRGB(40, 20, 30)
+
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(230, 230, 240)
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local toggBtn = Instance.new("TextButton", frame)
+    toggBtn.Size = UDim2.new(0, 40, 0, 20)
+    toggBtn.Position = UDim2.new(1, -50, 0.5, -10)
+    toggBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    toggBtn.Text = ""
+    Instance.new("UICorner", toggBtn).CornerRadius = UDim.new(1, 0)
+
+    local state = false
+    toggBtn.MouseButton1Click:Connect(function()
+        state = not state
+        toggBtn.BackgroundColor3 = state and Color3.fromRGB(220, 20, 60) or Color3.fromRGB(35, 35, 40)
+        callback(state)
+    end)
+end
+
+----------------------------------------------------------------
+-- 4. Dynamic Floating Buttons
+----------------------------------------------------------------
+local function CreateFloatingButton(name, text, onClick)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = UDim2.new(0, 45, 0, 45)
+    btn.Position = UDim2.new(0.5, 0, 0.5, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 10
+    btn.Font = Enum.Font.GothamBold
+    btn.Active = true
+    btn.Draggable = true
+    btn.Visible = false
+    btn.Parent = DeltaExecutor
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = Color3.fromRGB(220, 20, 60)
+    stroke.Thickness = 1.5
+
+    btn.MouseButton1Click:Connect(onClick)
+    return btn
+end
+
+-- ปุ่มลอยยิงฆาตกร
+local ShootFloatBtn = CreateFloatingButton("ShootFloatBtn", "ยิงไอชั่ว", function()
+    pcall(function()
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local gun = LocalPlayer.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Gun")
+        if not gun then return end
+
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and GetPlayerRole(plr) == "ไอชั่ว" and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local shootRemote = gun:FindFirstChild("Shoot") or Workspace:FindFirstChild("Shoot", true)
+                if shootRemote then
+                    shootRemote:FireServer(CFrame.new(char.HumanoidRootPart.Position, plr.Character.HumanoidRootPart.Position), CFrame.new(plr.Character.HumanoidRootPart.Position))
+                end
+                break
+            end
+        end
+    end)
+end)
+
+----------------------------------------------------------------
+-- 5. Invisibility System Core
+----------------------------------------------------------------
+local function UpdateVisuals(char, trans)
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if part.Name ~= "HumanoidRootPart" then part.Transparency = trans end
+        end
+    end
+end
+
+local function DisableInvis()
+    isInvisible = false
+    if invisLoop then invisLoop:Disconnect() invisLoop = nil end
+    if LocalPlayer.Character then UpdateVisuals(LocalPlayer.Character, 0) end
+end
+
+local function EnableInvis()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    isInvisible = true
+    pcall(function() char.HumanoidRootPart.RootJoint:Destroy() end)
+    
+    invisLoop = RunService.Stepped:Connect(function()
+        if not isInvisible or not char then DisableInvis() return end
+        UpdateVisuals(char, 0.5)
+    end)
+end
+
+local InvisFloatBtn = CreateFloatingButton("InvisFloatBtn", "ล่องหน", function()
+    if isInvisible then DisableInvis() else EnableInvis() end
+end)
+
+----------------------------------------------------------------
+-- 6. Creating Toggles in UI
+----------------------------------------------------------------
+CreateToggleUI("👁️ มองบทบาท (ส่องสีตัว + ข้อความบนหัว)", function(v)
+    RoleESP_Enabled = v
+    if not v then
+        for _, plr in pairs(Players:GetPlayers()) do CleanPlayerESP(plr) end
+    end
+end)
+
+CreateToggleUI("⚡ วาร์ปเก็บปืนอัตโนมัติแล้วกลับจุดเดิม", function(v)
+    AutoGrabGun_Enabled = v
+end)
+
+CreateToggleUI("👻 ปุ่มลอยล่องหน (PISIT Mode)", function(v)
+    Invis_Enabled = v
+    InvisFloatBtn.Visible = v
+    if not v then DisableInvis() end
+end)
+
+CreateToggleUI("🎯 ปุ่มลอยยิงฆาตกร (Sheriff)", function(v)
+    ShootFloatBtn.Visible = v
+end)
+
+----------------------------------------------------------------
+-- 7. Core Logic Loop
+----------------------------------------------------------------
+RunService.RenderStepped:Connect(function()
+    if RoleESP_Enabled then
+        pcall(function()
+            local localChar = LocalPlayer.Character
+            local localHRP = localChar and localChar:FindFirstChild("HumanoidRootPart")
+
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+                    local char = plr.Character
+                    local head = char:FindFirstChild("Head")
+                    local role = GetPlayerRole(plr)
+
+                    local roleColor = Color3.fromRGB(0, 255, 100)
+                    if role == "นายอำเภอ" then roleColor = Color3.fromRGB(0, 150, 255)
+                    elseif role == "ไอชั่ว" then roleColor = Color3.fromRGB(255, 30, 60) end
+
+                    local hl = RoleHighlights[plr]
+                    if not hl or hl.Parent ~= char then
+                        if hl then hl:Destroy() end
+                        hl = Instance.new("Highlight")
+                        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        hl.FillTransparency = 0.5
+                        hl.Parent = char
+                        RoleHighlights[plr] = hl
+                    end
+                    hl.FillColor = roleColor
+                    hl.OutlineColor = roleColor
+
+                    if head then
+                        local bgui = RoleGuis[plr]
+                        if not bgui or bgui.Parent ~= head then
+                            if bgui then bgui:Destroy() end
+                            bgui = Instance.new("BillboardGui")
+                            bgui.AlwaysOnTop = true
+                            bgui.Size = UDim2.new(0, 100, 0, 30)
+                            bgui.StudsOffset = Vector3.new(0, 2.5, 0)
+                            local lbl = Instance.new("TextLabel", bgui)
+                            lbl.Name = "RoleText"
+                            lbl.Size = UDim2.new(1, 0, 1, 0)
+                            lbl.BackgroundTransparency = 1
+                            lbl.Font = Enum.Font.GothamBold
+                            lbl.TextStrokeTransparency = 0
+                            bgui.Parent = head
+                            RoleGuis[plr] = bgui
+                        end
+                        local lbl = bgui:FindFirstChild("RoleText")
+                        if lbl then
+                            lbl.Text = role
+                            lbl.TextColor3 = roleColor
+                            if localHRP then
+                                lbl.TextSize = math.clamp(math.floor((localHRP.Position - head.Position).Magnitude / 3), 12, 36)
+                            end
+                        end
+                    end
+                else
+                    CleanPlayerESP(plr)
+                end
+            end
+        end)
+    end
+
+    if AutoGrabGun_Enabled and not IsTeleportingGun then
+        pcall(function()
+            local gunDrop = Workspace:FindFirstChild("GunDrop", true)
+            local char = LocalPlayer.Character
+            if gunDrop and char and char:FindFirstChild("HumanoidRootPart") then
+                IsTeleportingGun = true
+                local oldCFrame = char.HumanoidRootPart.CFrame
+                task.spawn(function()
+                    while gunDrop and gunDrop.Parent and AutoGrabGun_Enabled and char and char:FindFirstChild("HumanoidRootPart") do
+                        char.HumanoidRootPart.CFrame = gunDrop.CFrame + Vector3.new(0, 1.5, 0)
+                        task.wait(0.05)
+                    end
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        char.HumanoidRootPart.CFrame = oldCFrame
+                    end
+                    task.wait(0.5)
+                    IsTeleportingGun = false
+                end)
+            end
+        end)
+    end
+end)
+
+print("🔥 [PISIT HUB x pisit] โหลดสำเร็จแบบไร้บั๊ก ไม่มีสะดุด!")
+
