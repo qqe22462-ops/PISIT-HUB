@@ -1052,6 +1052,18 @@ function Window:_buildTogglePill()
 		BackgroundColor3 = Theme.Get("SecondaryBackground"), Visible = false, Parent = self.ScreenGui
 	})
 	Utility.New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = self.TogglePill })
+	
+	-- พื้นหลังรูปภาพที่ดึงลิงก์ภายนอกมาแปะ (แก้ปัญหาพื้นหลังมืดๆ ดำๆ แบบ v4.4)
+	local bgImg = Utility.New("ImageLabel", {
+		Name = "BgImage",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Image = "https://i.postimg.cc/Xv3PnCcS/file-000000003afc820797929cc434055d65.png",
+		ScaleType = Enum.ScaleType.Crop,
+		Parent = self.TogglePill
+	})
+	Utility.New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = bgImg })
+
 	self.PillStroke = Utility.New("UIStroke", { Color = Theme.Get("Accent"), Thickness = 1.5, Transparency = 0.1, Parent = self.TogglePill })
 	local pillStroke = self.PillStroke
 
