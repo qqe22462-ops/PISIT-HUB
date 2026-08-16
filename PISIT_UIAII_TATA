@@ -1,29 +1,15 @@
--- =======================================================
--- PISIT HUB | Complete Single-File Bundle v4.4 (Custom Asset UI)
--- =======================================================
+--[[
+	PISIT HUB | Complete Single-File Bundle v4.5
+	--------------------------------------------------------------------
+	Includes: Window, Tabs, Sections, Buttons, Toggles, Sliders, Dropdowns,
+	Textbox, Paragraph, Label, Keybind, ColorPicker, Divider, Image, Minimize
+	(with floating toggle button), Mobile-optimized 400x320 default window sizing,
+	Config Save/Load + AutoSave, Notification, and LIVE Theme Switching
+	(Red / Blue / Green / Purple / Light) via Library:SetTheme("Blue") or
+	Section:CreateThemeDropdown().
+--]]
 
 local Modules = {}
-
--- ระบบแคชภาพขั้นเทพสำหรับดึงเว็บตรงบนตัวรัน Delta X
-local function getCachedAsset(url)
-	local success, result = pcall(function()
-		if syn and syn.download_asset then
-			return syn.download_asset(url)
-		elseif getcustomasset and writefile then
-			local req = (syn and syn.request) or (http and http.request) or http_request or request
-			if req then
-				local response = req({Url = url, Method = "GET"})
-				if response and response.Body then
-					local fileName = "pisit_cache_" .. math.random(10000, 99999) .. ".png"
-					writefile(fileName, response.Body)
-					return getcustomasset(fileName)
-				end
-			end
-		end
-		return url
-	end)
-	return success and result or url
-end
 
 Modules.Utility = (function()
 local UserInputService = game:GetService("UserInputService")
@@ -451,7 +437,7 @@ function Toggle.new(parent, config)
 		})
 	end
 
-Theme.OnChanged:Connect(function()
+	Theme.OnChanged:Connect(function()
 		self.Instance.BackgroundColor3 = Theme.Get("ElementBackground")
 		stroke.Color = Theme.Get("Border")
 		label.TextColor3 = Theme.Get("Text")
@@ -683,7 +669,7 @@ function ColorPicker.new(parent, config)
 		end)
 	end
 
-makeSlider("R", r, Color3.fromRGB(255, 80, 80))
+	makeSlider("R", r, Color3.fromRGB(255, 80, 80))
 	makeSlider("G", g, Color3.fromRGB(80, 255, 100))
 	makeSlider("B", b, Color3.fromRGB(80, 150, 255))
 
@@ -710,7 +696,7 @@ makeSlider("R", r, Color3.fromRGB(255, 80, 80))
 		})
 	end
 
-return self
+	return self
 end
 return ColorPicker
 end)()
@@ -1000,21 +986,6 @@ function Window.new(config)
 	Utility.New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = self.Main })
 	self.MainStroke = Utility.New("UIStroke", { Color = Theme.Get("Border"), Thickness = 1.2, Transparency = 0.2, Parent = self.Main })
 
-	-- เพิ่มพื้นหลังด้านใน UI หลัก (รูปเบลอตามลิงก์ที่สอง)
-	self.BackgroundImage = Utility.New("ImageLabel", {
-		Name = "BackgroundImage", Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1, ScaleType = Enum.ScaleType.Crop,
-		Image = getCachedAsset("https://i.postimg.cc/4NGgWj7S/IMG-20260802-214156-065.jpg"),
-		ZIndex = 0, Parent = self.Main
-	})
-
-	-- ฟิล์มดำโปร่งแสงทับพื้นหลังเบลอๆ ให้เมนูน่าใช้และมองเห็นชัดเจนขึ้น
-	self.DarkOverlay = Utility.New("Frame", {
-		Name = "DarkOverlay", Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 0.45,
-		BorderSizePixel = 0, ZIndex = 0, Parent = self.Main
-	})
-
 	self:_buildTopBar(config.Title or "PISIT HUB")
 	self:_buildBody()
 	self:_buildTogglePill()
@@ -1033,6 +1004,7 @@ function Window.new(config)
 		self.MinBtn.BackgroundColor3 = Theme.Get("ElementBackground")
 		self.MinBtn.TextColor3 = Theme.Get("Text")
 		self.Sidebar.BackgroundColor3 = Theme.Get("SecondaryBackground")
+		self.TogglePill.BackgroundColor3 = Theme.Get("SecondaryBackground")
 		self.PillStroke.Color = Theme.Get("Accent")
 		self.PillLabel.TextColor3 = Theme.Get("Text")
 	end)
@@ -1041,16 +1013,18 @@ function Window.new(config)
 end
 
 function Window:_buildTopBar(titleText)
-	self.TopBar = Utility.New("Frame", { Name = "TopBar", BackgroundColor3 = Theme.Get("SecondaryBackground"), Size = UDim2.new(1, 0, 0, 40), ZIndex = 2, Parent = self.Main })
+	self.TopBar = Utility.New("Frame", { Name = "TopBar", BackgroundColor3 = Theme.Get("SecondaryBackground"), Size = UDim2.new(1, 0, 0, 40), Parent = self.Main })
 	Utility.New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = self.TopBar })
 	Utility.New("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 8), Parent = self.TopBar })
 
 	self.TitleLabel = Utility.New("TextLabel", { BackgroundTransparency = 1, Size = UDim2.new(1, -65, 1, 0), Text = titleText, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Theme.Get("Accent"), TextXAlignment = Enum.TextXAlignment.Left, Parent = self.TopBar })
 
+	-- ปุ่มปิด (X)
 	self.CloseBtn = Utility.New("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(24, 24), BackgroundColor3 = Theme.Get("ElementBackground"), Text = "x", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Theme.Get("Text"), AutoButtonColor = false, Parent = self.TopBar })
 	Utility.New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = self.CloseBtn })
 	self.CloseBtn.MouseButton1Click:Connect(function() self.ScreenGui:Destroy() end)
 
+	-- ปุ่มย่อหน้าต่าง (-) เว้นระยะ -50
 	self.MinBtn = Utility.New("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -50, 0.5, 0), Size = UDim2.fromOffset(24, 24), BackgroundColor3 = Theme.Get("ElementBackground"), Text = "-", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Theme.Get("Text"), AutoButtonColor = false, Parent = self.TopBar })
 	Utility.New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = self.MinBtn })
 	self.MinBtn.MouseButton1Click:Connect(function()
@@ -1062,8 +1036,8 @@ function Window:_buildTopBar(titleText)
 end
 
 function Window:_buildBody()
-	self.Body = Utility.New("Frame", { Name = "Body", Position = UDim2.new(0, 0, 0, 40), Size = UDim2.new(1, 0, 1, -40), BackgroundTransparency = 1, ZIndex = 1, Parent = self.Main })
-	self.Sidebar = Utility.New("ScrollingFrame", { Name = "Sidebar", BackgroundColor3 = Theme.Get("SecondaryBackground"), BackgroundTransparency = 0.15, Size = UDim2.new(0, 110, 1, 0), CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 2, Parent = self.Body })
+	self.Body = Utility.New("Frame", { Name = "Body", Position = UDim2.new(0, 0, 0, 40), Size = UDim2.new(1, 0, 1, -40), BackgroundTransparency = 1, Parent = self.Main })
+	self.Sidebar = Utility.New("ScrollingFrame", { Name = "Sidebar", BackgroundColor3 = Theme.Get("SecondaryBackground"), Size = UDim2.new(0, 110, 1, 0), CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 2, Parent = self.Body })
 	Utility.New("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6), PaddingTop = UDim.new(0, 6), Parent = self.Sidebar })
 	Utility.New("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, Padding = UDim.new(0, 3), Parent = self.Sidebar })
 
@@ -1071,30 +1045,20 @@ function Window:_buildBody()
 end
 
 function Window:_buildTogglePill()
-	-- ปุ่ม TogglePill แบบรูปภาพตามลิงก์แรก พร้อมขอบโค้งมนและกรอบสีน้ำเงิน/Accent
-	self.TogglePill = Utility.New("ImageButton", {
-		Name = "TogglePill", AutoButtonColor = false,
+	self.TogglePill = Utility.New("TextButton", {
+		Name = "TogglePill", Text = "", AutoButtonColor = false,
 		AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 16),
-		Size = UDim2.fromOffset(180, 42),
-		Image = getCachedAsset("https://i.postimg.cc/Xv3PnCcS/file-000000003afc820797929cc434055d65.png"),
-		ScaleType = Enum.ScaleType.Crop, Visible = false, Parent = self.ScreenGui
+		Size = UDim2.fromOffset(150, 38),
+		BackgroundColor3 = Theme.Get("SecondaryBackground"), Visible = false, Parent = self.ScreenGui
 	})
-	Utility.New("UICorner", { CornerRadius = UDim.new(0, 8), Parent = self.TogglePill })
-	self.PillStroke = Utility.New("UIStroke", { Color = Theme.Get("Accent"), Thickness = 2, Transparency = 0, Parent = self.TogglePill })
+	Utility.New("UICorner", { CornerRadius = UDim.new(1, 0), Parent = self.TogglePill })
+	self.PillStroke = Utility.New("UIStroke", { Color = Theme.Get("Accent"), Thickness = 1.5, Transparency = 0.1, Parent = self.TogglePill })
 	local pillStroke = self.PillStroke
 
-	-- ฟิล์มดำบางๆ ทับปุ่มรูปภาพให้ตัวหนังสือด้านบนเด่นขึ้น
-	local pillOverlay = Utility.New("Frame", {
-		Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-		BackgroundTransparency = 0.35, BorderSizePixel = 0, Parent = self.TogglePill
-	})
-	Utility.New("UICorner", { CornerRadius = UDim.new(0, 8), Parent = pillOverlay })
-
 	self.PillLabel = Utility.New("TextLabel", {
-		BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1, Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 16, 0, 0),
 		Text = "เปิด PISIT HUB", Font = Enum.Font.GothamBold, TextSize = 13,
-		TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Center,
-		ZIndex = 2, Parent = self.TogglePill
+		TextColor3 = Theme.Get("Text"), TextXAlignment = Enum.TextXAlignment.Left, Parent = self.TogglePill
 	})
 
 	task.spawn(function()
@@ -1134,7 +1098,7 @@ return Window
 end)()
 
 local Library = {}
-Library._version = "4.4"
+Library._version = "4.5"
 function Library:CreateWindow(config) return Modules.Window.new(config) end
 
 function Library:Notify(data) Modules.Notification.Notify(data) end
@@ -1147,4 +1111,3 @@ function Library:SetTheme(name) return Modules.Theme.Set(name) end
 function Library:GetThemes() return Modules.Theme.Order end
 
 return Library
-
